@@ -125,6 +125,49 @@ Built with:
 - **Rich** - Terminal formatting
 - **keyring** - Secure credential storage
 
+## Publishing a New Version
+
+The project uses GitHub Actions to automatically publish to PyPI when you push a version tag.
+
+### Prerequisites
+
+1. Add your PyPI API token to GitHub repository secrets:
+   - Go to https://github.com/tomdyson/huum-cli/settings/secrets/actions
+   - Add a new secret named `PYPI_API_TOKEN`
+   - Value: Your PyPI API token (starts with `pypi-`)
+
+### Release Process
+
+1. **Update version in `pyproject.toml`**:
+   ```bash
+   # Edit pyproject.toml and change version = "0.1.0" to new version
+   ```
+
+2. **Commit the version change**:
+   ```bash
+   git add pyproject.toml
+   git commit -m "Bump version to 0.2.0"
+   git push
+   ```
+
+3. **Create and push a git tag**:
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+4. **GitHub Action runs automatically**:
+   - Builds the package with `uv build`
+   - Publishes to PyPI
+   - Check progress at https://github.com/tomdyson/huum-cli/actions
+
+### Version Numbering
+
+Follow semantic versioning (MAJOR.MINOR.PATCH):
+- **MAJOR**: Breaking changes (e.g., 1.0.0 → 2.0.0)
+- **MINOR**: New features, backwards compatible (e.g., 0.1.0 → 0.2.0)
+- **PATCH**: Bug fixes, backwards compatible (e.g., 0.1.0 → 0.1.1)
+
 ## License
 
 MIT
