@@ -117,23 +117,32 @@ class HuumAPIClient:
         devices = []
         # Response format: {"device_id": {"temperature": 56, ...}, ...}
         for device_id, status in data.items():
-            # Determine heating state
+            status_code = status.get("statusCode")
             heating_state = "idle"
             session_active = False
+            online = status.get("door", False)
 
-            # Check if there's an active session (has endDate in the future)
-            if status.get("endDate"):
-                from datetime import datetime
-                end_time = datetime.fromtimestamp(status["endDate"])
-                if end_time > datetime.now():
-                    heating_state = "heating"
-                    session_active = True
+            if status_code == 230: # Offline
+                online = False
+                heating_state = "offline"
+            elif status_code == 231: # Heating
+                heating_state = "heating"
+                session_active = True
+            elif status_code == 232: # Online but not heating
+                heating_state = "idle"
+                session_active = False
+            elif status_code == 233: # Locked by another user
+                heating_state = "locked"
+                session_active = False # Or True, but CLI can't control it
+            elif status_code == 400: # Emergency Stop
+                heating_state = "stopped"
+                session_active = False
 
             devices.append(
                 SaunaDevice(
                     device_id=device_id,
                     name=status.get("saunaName") or f"Sauna {device_id}",
-                    online=status.get("door", False),  # door=true means online
+                    online=online,
                     current_temperature=status.get("temperature", 0),
                     target_temperature=status.get("targetTemperature"),
                     heating_state=heating_state,
@@ -324,51 +333,36 @@ def authenticate(username: str, password: str) -> AuthCredentials:
         AuthenticationError: If authentication fails
         APIError: If API returns an error
     """
-    # Try both known API endpoints
-    # Based on user testing, sauna.huum.eu works
     base_urls = ["https://sauna.huum.eu", "https://api.huum.eu"]
-
     last_error = None
-    for base_url in base_urls:
-        client = httpx.Client(base_url=base_url, timeout=10.0)
 
+    for base_url in base_urls:
+        client = None
         try:
+            client = httpx.Client(base_url=base_url, timeout=10.0)
             response = client.post(
                 "/action/login",
-                json={
-                    "username": username,
-                    "password": password,
-                },
+                json={"username": username, "password": password},
             )
 
-            # Check for 404 before trying to parse JSON
             if response.status_code == 404:
-                # Try next base URL
-                client.close()
+                last_error = APIError(f"API endpoint not found at {base_url} (404)")
                 continue
 
-            # Try to parse JSON response
-            try:
-                # Huum API returns JSONP format: ({"key":"value"});
-                # Strip the parentheses to get valid JSON
-                text = response.text.strip()
-                if text.startswith("(") and text.endswith(");"):
-                    text = text[1:-2]  # Remove leading ( and trailing );
-                elif text.startswith("(") and text.endswith(")"):
-                    text = text[1:-1]  # Remove leading ( and trailing )
+            text = response.text.strip()
+            if text.startswith("(") and text.endswith(");"):
+                text = text[1:-2]
+            elif text.startswith("(") and text.endswith(")"):
+                text = text[1:-1]
 
-                # Parse the cleaned JSON
-                import json
-                data = json.loads(text)
-            except Exception as e:
-                # Not JSON, likely HTML error page
-                raise APIError(
-                    f"API returned non-JSON response (status {response.status_code}). "
-                    f"Response preview: {response.text[:200]}"
-                )
+            if not text:
+                last_error = APIError(f"API returned empty response from {base_url}")
+                continue
+
+            import json
+            data = json.loads(text)
 
             if response.status_code == 200:
-                # Huum API returns session_hash, user_id, email
                 session = data.get("session_hash")
                 user_id = str(data.get("user_id", ""))
                 email = data.get("email", username)
@@ -387,20 +381,23 @@ def authenticate(username: str, password: str) -> AuthCredentials:
             elif "error" in data:
                 raise AuthenticationError(data["error"])
             else:
-                raise APIError(f"Authentication failed: {response.status_code}")
-        except (AuthenticationError, APIError):
-            # Re-raise auth/API errors immediately
-            client.close()
-            raise
+                last_error = APIError(f"Authentication failed at {base_url}: {response.status_code}")
+                continue
+
+        except (AuthenticationError, APIError) as e:
+            last_error = e
+            continue
         except httpx.HTTPError as e:
-            # Try next base URL on connection errors
-            client.close()
-            if base_url == base_urls[-1]:
-                # Last URL failed
-                raise APIError(f"Cannot connect to Huum API: {e}")
+            last_error = APIError(f"Cannot connect to {base_url}: {e}")
+            continue
+        except Exception as e:
+            last_error = APIError(f"An unexpected error occurred with {base_url}: {e}")
             continue
         finally:
-            if not client.is_closed:
+            if client and not client.is_closed:
                 client.close()
 
-    raise APIError("All API endpoints failed")
+    if isinstance(last_error, AuthenticationError):
+        raise last_error
+
+    raise APIError(f"All API endpoints failed. Last error: {last_error}")

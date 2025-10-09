@@ -14,7 +14,7 @@ class SaunaDevice(BaseModel):
     online: bool
     current_temperature: int = Field(..., ge=0, le=120)
     target_temperature: Optional[int] = Field(None, ge=40, le=110)
-    heating_state: Literal["idle", "heating", "ready", "stopped"]
+    heating_state: Literal["idle", "heating", "ready", "stopped", "offline", "locked"]
     session_active: bool
     last_updated: datetime
 
