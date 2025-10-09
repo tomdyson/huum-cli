@@ -38,3 +38,10 @@ class Session(BaseModel):
     target_temperature: int = Field(..., ge=40, le=110)
     state: Literal["active", "completed", "cancelled"]
     duration_minutes: Optional[int] = Field(None, ge=0, le=360)
+
+
+class TemperatureReading(BaseModel):
+    """Represents a single temperature reading from the sauna."""
+
+    timestamp: datetime
+    temperature: int = Field(..., ge=0, le=120)

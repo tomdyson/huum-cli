@@ -6,6 +6,7 @@ from huum_cli.commands.auth import auth_app
 from huum_cli.commands.start import start_command
 from huum_cli.commands.status import status_command
 from huum_cli.commands.stop import stop_command
+from huum_cli.commands.statistics import statistics_command
 
 app = typer.Typer(
     name="huum",
@@ -20,6 +21,7 @@ app.add_typer(auth_app, name="auth")
 app.command(name="start")(start_command)
 app.command(name="status")(status_command)
 app.command(name="stop")(stop_command)
+app.command(name="statistics")(statistics_command)
 
 # Global options will be available via context
 # Additional commands will be registered here as they are implemented

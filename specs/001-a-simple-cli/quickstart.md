@@ -60,7 +60,8 @@ dependencies = [
     "keyring>=25.0.0",
     "tenacity>=8.2.0",
     "pydantic>=2.0.0",
-    "rich>=13.0.0"
+    "rich>=13.0.0",
+    "plotext>=5.2.8"
 ]
 
 [project.scripts]

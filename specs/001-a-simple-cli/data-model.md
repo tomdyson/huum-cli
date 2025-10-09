@@ -160,6 +160,31 @@ Represents authentication information for accessing the Huum API.
 
 ---
 
+### 4. TemperatureReading
+
+Represents a single temperature reading at a specific point in time.
+
+**Attributes**:
+
+| Attribute | Type | Required | Description | Validation Rules |
+|-----------|------|----------|-------------|------------------|
+| `timestamp` | datetime | Yes | The time the reading was taken | ISO 8601 format |
+| `temperature` | integer | Yes | The temperature in Celsius | 0-120°C |
+
+**Relationships**:
+- A SaunaDevice can have many TemperatureReadings.
+
+**Example**:
+
+```json
+{
+  "timestamp": "2025-10-09T10:00:00Z",
+  "temperature": 55
+}
+```
+
+---
+
 ## Entity Relationships Diagram
 
 ```

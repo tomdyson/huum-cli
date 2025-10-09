@@ -87,7 +87,23 @@ As a sauna owner with multiple Huum devices, I want to list all my connected sau
 
 ---
 
-### User Story 6 - Initial Authentication Setup (Priority: P1)
+### User Story 6 - View Temperature Statistics (Priority: P3)
+
+As a sauna owner, I want to view historical temperature data so that I can see usage patterns and heating times.
+
+**Why this priority**: This is a "nice-to-have" feature that provides insights but is not essential for the core control loop of the sauna.
+
+**Independent Test**: Can be tested by running the statistics command and verifying that it displays a table or graph of recent temperature readings.
+
+**Acceptance Scenarios**:
+
+1. **Given** my sauna has been used recently, **When** I request statistics, **Then** I see a table of temperature readings from the last 24 hours.
+2. **Given** I want to see the full history for the month, **When** I use an `--all` flag, **Then** the table shows all available data points for the current month.
+3. **Given** I prefer a visual representation, **When** I use a `--graph` flag, **Then** the data is displayed as a terminal-based line graph.
+
+---
+
+### User Story 7 - Initial Authentication Setup (Priority: P1)
 
 As a first-time CLI user, I need to authenticate with my Huum account so that the CLI can access my sauna devices.
 

@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from huum_cli.api.models import AuthCredentials, SaunaDevice
+from huum_cli.api.models import AuthCredentials, SaunaDevice, TemperatureReading
 
 
 class AuthenticationError(Exception):
@@ -234,6 +234,71 @@ class HuumAPIClient:
             return result.get("valid", False)
         except (httpx.HTTPStatusError, APIError):
             return False
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+    )
+    def get_statistics(self, device_id: str) -> List[TemperatureReading]:
+        """
+        Fetch temperature statistics for a device for the current month.
+
+        Args:
+            device_id: Device to get statistics for
+
+        Returns:
+            List of TemperatureReading entities
+
+        Raises:
+            APIError: If API returns an error
+        """
+        from datetime import datetime
+        from huum_cli.api.models import TemperatureReading
+
+        # Get the current month in YYYY-MM format
+        current_month = datetime.now().strftime("%Y-%m")
+
+        params = {
+            "session": self.session_token,
+            "version": "3",
+            "month": current_month,
+            "saunaId": int(device_id),
+        }
+
+        try:
+            response = self.client.get(
+                "/action/get_temperatures",
+                params=params,
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise APIError(f"API returned an error: {e.response.status_code} - {e.response.text}") from e
+
+        # Parse JSONP response
+        text = response.text.strip()
+        if text.startswith("(") and text.endswith(");"):
+            text = text[1:-2]
+        elif text.startswith("(") and text.endswith(")"):
+            text = text[1:-1]
+
+        import json
+        data = json.loads(text)
+
+        readings = []
+        if isinstance(data, list):
+            for item in data:
+                try:
+                    timestamp = datetime.fromtimestamp(int(item["changeTime"]))
+                    temperature = int(item["temperature"])
+                    readings.append(TemperatureReading(timestamp=timestamp, temperature=temperature))
+                except (ValueError, TypeError, KeyError):
+                    # Ignore invalid data points
+                    continue
+        
+        # Sort readings by timestamp
+        readings.sort(key=lambda r: r.timestamp)
+
+        return readings
 
     def __enter__(self) -> "HuumAPIClient":
         """Context manager entry."""

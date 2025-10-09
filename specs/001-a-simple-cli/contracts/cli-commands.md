@@ -309,7 +309,98 @@ Cabin Sauna (huum-def456)
 
 ---
 
-### 5. `list` - List Available Devices
+### 5. `statistics` - View Temperature Statistics
+
+**Purpose**: Display historical temperature data for a device.
+
+**Usage**:
+```bash
+huum statistics [DEVICE_ID] [OPTIONS]
+huum statistics           # Show last 24 hours for default device
+huum statistics my-sauna --all --graph
+```
+
+**Arguments**:
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `device_id` | string | No | Device ID or name (if omitted, auto-selects) |
+
+**Options**:
+
+| Option | Short | Type | Default | Description |
+|--------|-------|------|---------|-------------|
+| `--all` | - | flag | false | Show all available data for the current month |
+| `--graph` | - | flag | false | Display data as a terminal graph |
+
+**Behavior**:
+1. Verify authentication.
+2. Auto-select device if only one exists.
+3. Fetch all available temperature data for the current month from the Huum API.
+4. By default, filter data to the last 24 hours. If `--all` is used, show all data.
+5. If `--graph` is used, display an ASCII graph of temperature over time.
+6. Otherwise, display the data in a table.
+
+**Success Output** (human format - table):
+```
+24-Hour Temperature Statistics for Home Sauna
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Timestamp             Temperature (°C)
+──────────────────────────────────────────────
+2025-10-09 10:00:00   55°C
+2025-10-09 10:05:00   58°C
+...
+```
+
+**Success Output** (human format - graph):
+```
+    ┌──────────────────────────────────┐
+80.0┤                                  │
+    │                ╭─╮               │
+    │               ╱   ╲              │
+60.0┤         ╭───╮╱     ╲╭───╮         │
+    │        ╱     │      │    ╲        │
+    │       ╱      │      │     ╲       │
+40.0┤─────╮╱       │      │      ╲╭─────│
+    │      │       │      │       │     │
+20.0┤      │       │      │       │     │
+    └──────┴───────┴──────┴───────┴─────┘
+      10:00      11:00      12:00
+```
+
+**Success Output** (json format):
+```json
+{
+  "status": "success",
+  "device_id": "huum-abc123",
+  "period": "24-hours",
+  "readings": [
+    {
+      "timestamp": "2025-10-09T10:00:00Z",
+      "temperature": 55
+    },
+    {
+      "timestamp": "2025-10-09T10:05:00Z",
+      "temperature": 58
+    }
+  ]
+}
+```
+
+**Error Cases**:
+
+| Scenario | Exit Code | Error Message |
+|----------|-----------|---------------|
+| Not authenticated | 1 | `Error: Not authenticated. Run 'huum auth' first.` |
+| Device not found | 1 | `Error: Device 'my-sauna' not found` |
+| No statistics found | 0 | `No statistics found for this device for the last 24 hours.` |
+| API error | 2 | `Error: Failed to fetch statistics: {api_error_message}` |
+
+**Exit Codes**: 0 (success), 1 (validation error), 2 (API error)
+
+---
+
+### 6. `list` - List Available Devices
 
 **Purpose**: Display all sauna devices associated with the authenticated account.
 
@@ -377,7 +468,7 @@ Total: 2 devices
 
 ---
 
-### 6. `config` - Manage Configuration
+### 7. `config` - Manage Configuration
 
 **Purpose**: View or modify CLI configuration settings.
 
@@ -461,7 +552,7 @@ default_temperature: 85
 
 ---
 
-### 7. `logout` - Clear Authentication
+### 8. `logout` - Clear Authentication
 
 **Purpose**: Remove stored credentials and log out.
 

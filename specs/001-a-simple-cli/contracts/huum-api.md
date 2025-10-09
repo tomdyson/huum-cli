@@ -200,7 +200,44 @@ Include session token in request body for all authenticated endpoints:
 }
 ```
 
-### 4. Control Sauna Light
+### 4. Get Temperature Statistics
+
+**Endpoint**: `GET /action/get_temperatures`
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `session` | string | Yes | Session token |
+| `version` | integer | Yes | API version (e.g., 3) |
+| `month` | string | Yes | Month to fetch data for, in "YYYY-MM" format |
+| `saunaId` | integer | Yes | The ID of the sauna device |
+
+**Response** (Success):
+A list of temperature readings.
+```json
+[
+  {
+    "changeTime": 1759392403,
+    "temperature": "12",
+    "targetTemperature": null,
+    "isHeating": "0"
+  },
+  {
+    "changeTime": 1759393931,
+    "temperature": "14",
+    "targetTemperature": null,
+    "isHeating": "0"
+  }
+]
+```
+
+**HTTP Status Codes**:
+- `200 OK`: Command accepted
+- `401 Unauthorized`: Session token invalid
+- `404 Not Found`: Endpoint not found (if URL is incorrect)
+
+### 5. Control Sauna Light
 
 **Endpoint**: `POST /action/light`
 

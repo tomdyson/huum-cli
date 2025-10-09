@@ -8,6 +8,7 @@ A command-line interface for managing Huum sauna devices remotely.
 - 🔥 **Start Sessions** - Remotely start your sauna heating
 - ⏹️  **Stop Sessions** - Turn off your sauna from the command line
 - 📊 **Status Display** - View current and target temperatures with Rich formatting
+- 📈 **Statistics & Graphs** - View historical temperature data as a table or graph
 - 🌡️  **Custom Temperatures** - Set target temperature (40-110°C)
 - 🎯 **Auto-device Selection** - Automatically selects device if you have only one
 - ⚡ **Fast & Reliable** - Automatic retries with exponential backoff
@@ -92,6 +93,24 @@ huum start [DEVICE_ID] [--temperature 85]
 
 # Stop sauna
 huum stop [DEVICE_ID]
+```
+
+### Statistics
+
+View historical temperature data. By default, it shows data for the last 24 hours.
+
+```bash
+# Show statistics for the last 24 hours
+huum statistics
+
+# Show all available data for the current month
+huum statistics --all
+
+# Display the data as a graph
+huum statistics --graph
+
+# Combine flags
+huum statistics --all --graph
 ```
 
 ### Device Management
